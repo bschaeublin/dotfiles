@@ -1,2 +1,2 @@
 ﻿# copy windows terminal styles
-Copy-Item ".\terminal\settings.json" "%localappdata%\microsoft\windows terminal\settings.json" -Force
+Copy-Item ".\terminal\settings.json" "$env:LOCALAPPDATA\microsoft\windows terminal\settings.json" -Force
