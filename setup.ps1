@@ -1,4 +1,8 @@
-﻿choco install neovim -y
+﻿# font for terminal
+choco install nerd-fonts-robotomono
+
+# neovim
+choco install neovim -y
 
 # used by telescope
 choco install mingw -y 
@@ -10,6 +14,5 @@ New-Item -ItemType SymbolicLink -Path "$env:LOCALAPPDATA\nvim" -Target ".\nvim"
 
 # make  sure userhome ("HOME" environemnt shows not to a network drive).
 # Todo: Set environment variable to C:\Users\User
-
 #nvim :MasonUpdate
 
