@@ -7,6 +7,7 @@ vim.keymap.set('n', '<C-l>', '<C-w>l', { desc = "Jump to right panel", remap = t
 -- buffers
 vim.keymap.set("n", "<A-h>", "<cmd>bprevious<cr>", { desc = "Prev Buffer", silent = true })
 vim.keymap.set("n", "<A-l>", "<cmd>bnext<cr>", { desc = "Next Buffer", silent = true })
+vim.keymap.set("n", "<A-q>", "<cmd>bd<cr>", { desc = "Close Buffer", silent = true })
 
 -- Scroll up and down
 vim.keymap.set("n", "U", "<c-u>zz")
