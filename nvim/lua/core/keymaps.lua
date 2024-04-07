@@ -96,6 +96,7 @@ vim.keymap.set('n', '<leader>sc', ':e %:r.scss<CR>', { desc = "Switch to SCSS", 
 
 -- Oil
 vim.keymap.set('n', '<leader>o', ':Oil --float<CR>', { desc = "Open Parent Directory", silent = true })
+vim.keymap.set('n', '<F5>', '<C-l>', { desc = "Refresh Oil", silent = true, remap = true })
 
 -- FTerm
 vim.keymap.set('n', '<A-i>', require('FTerm').toggle, { desc = "Show Floating Terminal" })
