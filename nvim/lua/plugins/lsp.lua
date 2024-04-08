@@ -62,7 +62,7 @@ return {
             lsp_zero.extend_lspconfig()
 
             require('mason-lspconfig').setup({
-                ensure_installed = {'angularls','tsserver','html', 'eslint','cssls'},
+                ensure_installed = {'angularls','tsserver','html', 'eslint','cssls', 'csharp_ls'},
                 handlers = {
                     lsp_zero.default_setup,
                     -- lua

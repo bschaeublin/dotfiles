@@ -30,7 +30,7 @@ return {
                         key = 'e',
                     },
                     {
-                        desc = '⌨ Keymap',
+                        desc = '⌨  Keymap',
                         group = 'Number',
                         action = 'e ~/AppData/Local/nvim/lua/core/keymaps.lua',
                         key = 's',
