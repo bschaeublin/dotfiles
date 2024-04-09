@@ -25,6 +25,8 @@ vim.keymap.set("v", ">", ">gv")
 vim.keymap.set('v', 'J', ':m \'>+1<CR>gv=gv', { desc = "Move block down"})
 vim.keymap.set('v', 'K', ':m \'<-2<CR>gv=gv', { desc = "Move block up"})
 
+vim.keymap.set({ "i", "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save File" })
+
 -- LSP Bindings
 require('lsp-zero').on_attach(function(client, bufnr)
     local attach_opts = { buffer = bufnr, remap = false }
