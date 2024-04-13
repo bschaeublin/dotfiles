@@ -1,0 +1,24 @@
+[include]
+    path="~/.gitconfig.local"
+
+[core]
+    autocrlf = false
+
+[init]
+    default = main
+
+[pull]
+    ff = only
+
+[fetch]
+    prune = true
+
+[alias]
+    # show log
+    l = log --pretty=oneline --graph
+    # ammend staged changes to last commit
+	recommit = !"git commit --amend --no-edit"
+	# soft reset previous commit
+	uncommit = !"git reset --soft HEAD^"
+	# force push with lease
+    punch = !"git push --force-with-lease"
