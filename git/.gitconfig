@@ -17,8 +17,11 @@
     # show log
     l = log --pretty=oneline --graph
     # ammend staged changes to last commit
-	recommit = !"git commit --amend --no-edit"
-	# soft reset previous commit
-	uncommit = !"git reset --soft HEAD^"
-	# force push with lease
+    recommit = !"git commit --amend --no-edit"
+    # soft reset previous commit
+    uncommit = !"git reset --soft HEAD^"
+    # hard reset to origin
+    reset-origin = "git reset --hard @{u}" 
+    # force push with lease
     punch = !"git push --force-with-lease"
+

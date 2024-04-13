@@ -2,7 +2,7 @@
 choco install nerd-fonts-robotomono
 
 # github cli
-choco install gh
+choco install gh -y
 
 # neovim
 choco install neovim -y
@@ -13,8 +13,8 @@ choco install ripgrep -y
 choco install fd -y
 
 # create symlink for git-config
-if (Test-Path -Path "$env:LOCALAPPDATA\.gitconfig") { Remove-Item -Path "$env:LOCALAPPDATA\.gitconfig" -Force }
-New-Item -ItemType SymbolicLink -Path "$env:LOCALAPPDATA\.gitconfig" -Target ".\git\.gitconfig"
+if (Test-Path -Path "$env:USERPROFILE\.gitconfig") { Remove-Item -Path "$env:USERPROFILE\.gitconfig" -Force }
+New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.gitconfig" -Target ".\git\.gitconfig"
 
 # create symlink for nvim config
 New-Item -ItemType SymbolicLink -Path "$env:LOCALAPPDATA\nvim" -Target ".\nvim"
