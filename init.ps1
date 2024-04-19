@@ -21,3 +21,7 @@ New-Item -ItemType SymbolicLink -Path "$env:LOCALAPPDATA\nvim" -Target ".\nvim"
 
 # make sure userhome ("HOME" environment-variable) is explicit mapped to a local folder (C:/Users/Username).
 [System.Environment]::SetEnvironmentVariable('HOME', $env:USERPROFILE, 'User')
+
+# optional
+# dotnet tool install -g csharpier # formatter
+# dotnet tool install -g csharp-ls # csharp_lsp

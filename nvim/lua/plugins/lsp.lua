@@ -64,11 +64,19 @@ return {
             require('mason-lspconfig').setup({
                 ensure_installed = {'angularls','tsserver','html', 'eslint','cssls', 'csharp_ls'},
                 handlers = {
-                    lsp_zero.default_setup,
+                    function(server_name)
+                        require('lspconfig')[server_name].setup({})
+                    end,
                     -- lua
                     lua_ls = function()
                         local lua_opts = lsp_zero.nvim_lua_ls()
                         require('lspconfig').lua_ls.setup(lua_opts)
+                    end,
+                    angularls = function()
+                        local lsp_util = require('lspconfig.util');
+                        require('lspconfig').angularls.setup({
+                            root_dir = lsp_util.root_pattern('angular.json')
+                        })
                     end,
                     -- typescript
                     tsserver = function()
@@ -85,11 +93,10 @@ return {
                         end
 
                         require('lspconfig').tsserver.setup({
-                            root_dir = lsp_util.root_pattern("package.json"),
                             init_options = {
                                 preferences = {
                                     organizeImportsIgnoreCase = true,
-                                    importModuleSpecifierPreference = 'relative',
+                                    importModuleSpecifierPreference = 'project-relative',
                                 }
                             },
                             on_attach = function(client, bufnr)

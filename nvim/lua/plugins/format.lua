@@ -8,6 +8,7 @@ return {
                 ["javascriptreact"] = { "prettier" },
                 ["typescript"] = { "prettier" },
                 ["typescriptreact"] = { "prettier" },
+                ["cs"] = { "csharpier"},
                 ["vue"] = { "prettier" },
                 ["css"] = { "prettier" },
                 ["scss"] = { "prettier" },
@@ -20,6 +21,12 @@ return {
                 ["graphql"] = { "prettier" },
                 ["handlebars"] = { "prettier" },
             },
+            formatters = {
+                csharpier = {
+                    command = "dotnet-csharpier",
+                    args = { "--write-stdout" }
+                }
+            }
         },
     },
 }
