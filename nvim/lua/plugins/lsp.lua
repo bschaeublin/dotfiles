@@ -1,16 +1,5 @@
 return {
     {
-        'VonHeikemen/lsp-zero.nvim',
-        branch = 'v3.x',
-        lazy = true,
-        config = false,
-        init = function()
-            -- Disable automatic setup, we are doing it manually
-            vim.g.lsp_zero_extend_cmp = 0
-            vim.g.lsp_zero_extend_lspconfig = 0
-        end,
-    },
-    {
         'williamboman/mason.nvim',
         lazy = false,
         config = true,
@@ -24,14 +13,9 @@ return {
             {'L3MON4D3/LuaSnip'},
         },
         config = function()
-            local lsp_zero = require('lsp-zero')
-            lsp_zero.extend_cmp()
-
             local cmp = require('cmp')
-            local cmp_action = lsp_zero.cmp_action()
 
             cmp.setup({
-                formatting = lsp_zero.cmp_format({details = true}),
                 mapping = cmp.mapping.preset.insert({
                     ['<CR>'] = cmp.mapping.confirm({select = false}),
                     ['<C-Space>'] = cmp.mapping.complete(),
@@ -58,30 +42,33 @@ return {
             {'williamboman/mason-lspconfig.nvim'},
         },
         config = function()
-            local lsp_zero = require('lsp-zero')
-            lsp_zero.extend_lspconfig()
+
+            local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
+
+            local default_setup = function(server)
+                require('lspconfig')[server].setup({
+                    capabilities = lsp_capabilities,
+                })
+            end
 
             require('mason-lspconfig').setup({
-                ensure_installed = {'angularls','tsserver','html', 'eslint','cssls', 'csharp_ls'},
+                ensure_installed = {'angularls','tsserver','html', 'lua_ls', 'eslint','cssls', 'csharp_ls'},
                 handlers = {
-                    function(server_name)
-                        require('lspconfig')[server_name].setup({})
-                    end,
+                    default_setup, 
                     -- lua
                     lua_ls = function()
-                        local lua_opts = lsp_zero.nvim_lua_ls()
-                        require('lspconfig').lua_ls.setup(lua_opts)
+                        require('lspconfig').lua_ls.setup({ capabilities = lsp_capabilities })
                     end,
+                    -- angular
                     angularls = function()
                         local lsp_util = require('lspconfig.util');
                         require('lspconfig').angularls.setup({
+                            capabilities = lsp_capabilities,
                             root_dir = lsp_util.root_pattern('angular.json')
                         })
                     end,
                     -- typescript
                     tsserver = function()
-                        local lsp_util = require('lspconfig.util');
-                        
                         -- organize imports
                         local function organize_imports()
                             local params = {
@@ -93,6 +80,7 @@ return {
                         end
 
                         require('lspconfig').tsserver.setup({
+                            capabilities = lsp_capabilities,
                             init_options = {
                                 preferences = {
                                     organizeImportsIgnoreCase = true,

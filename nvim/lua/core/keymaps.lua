@@ -28,53 +28,57 @@ vim.keymap.set('v', 'K', ':m \'<-2<CR>gv=gv', { desc = "Move block up"})
 vim.keymap.set({ "i", "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save File" })
 
 -- LSP Bindings
-require('lsp-zero').on_attach(function(client, bufnr)
-    local attach_opts = { buffer = bufnr, remap = false }
-    -- Diagnostics mappings
-    vim.keymap.set('n', '<leader>k', function()
-    	vim.lsp.diagnostic.open_float(0, { scope='line' })
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Open diagnostics'}))
-    vim.keymap.set('n', '<leader>kn', function()
-        vim.lsp.diagnostic.goto_next()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Next diagnostic'}))
-    vim.keymap.set('n', '<leader>kp', function()
-        vim.lsp.diagnostic.goto_prev()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Previous diagnostic'}))
+vim.api.nvim_create_autocmd('LspAttach', {
+    desc = 'LSP Actions',
+    callback = function(event)
+        local attach_opts = { buffer = event.buf, remap = false }
+        -- Diagnostics mappings
+        vim.keymap.set('n', '<leader>k', function()
+            vim.lsp.diagnostic.open_float(0, { scope='line' })
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Open diagnostics'}))
+        vim.keymap.set('n', '<leader>kn', function()
+            vim.lsp.diagnostic.goto_next()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Next diagnostic'}))
+        vim.keymap.set('n', '<leader>kp', function()
+            vim.lsp.diagnostic.goto_prev()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Previous diagnostic'}))
 
-    -- Code navigation and Discovering
-    vim.keymap.set('n', '<leader>gi', function()
-        vim.lsp.buf.implementation()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [G]o to [i]mplementation'}))
-    vim.keymap.set('n', '<leader>gD',  function()
-        vim.lsp.buf.declaration()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [G]o to [D]eclaration'}))
-    vim.keymap.set('n', '<leader>gd',  function()
-        vim.lsp.buf.definition()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [G]o to [d]efinition'}))
-    vim.keymap.set('n', '<leader>gr', function()
-        vim.lsp.buf.references()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Find References'}))
-    vim.keymap.set('n', '<leader>gh', function()
-        vim.lsp.buf.hover()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Hover'}))
-    vim.keymap.set('n', '<leader>gH', function()
-        vim.lsp.buf.signature_help()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Signature Help'}))
+        -- Code navigation and Discovering
+        vim.keymap.set('n', '<leader>gi', function()
+            vim.lsp.buf.implementation()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [G]o to [i]mplementation'}))
+        vim.keymap.set('n', '<leader>gD',  function()
+            vim.lsp.buf.declaration()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [G]o to [D]eclaration'}))
+        vim.keymap.set('n', '<leader>gd',  function()
+            vim.lsp.buf.definition()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [G]o to [d]efinition'}))
+        vim.keymap.set('n', '<leader>gr', function()
+            vim.lsp.buf.references()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Find References'}))
+        vim.keymap.set('n', '<leader>gh', function()
+            vim.lsp.buf.hover()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Hover'}))
+        vim.keymap.set('n', '<leader>gH', function()
+            vim.lsp.buf.signature_help()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Signature Help'}))
 
-    -- Refactorings
-    vim.keymap.set('n', '<leader>rr', function()
-        vim.lsp.buf.rename()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [R]ename [r]efac otor'}))
-    vim.keymap.set('n', '<leader>.', function()
-        vim.lsp.buf.code_action()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Code action'}))
-    vim.keymap.set('n', '<leader>rf', function()
-        vim.lsp.buf.formatting()
-    end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [R]e[f]ormat'}))
+        -- Refactorings
+        vim.keymap.set('n', '<leader>rr', function()
+            vim.lsp.buf.rename()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [R]ename [r]efac otor'}))
+        vim.keymap.set('n', '<leader>.', function()
+            vim.lsp.buf.code_action()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Code action'}))
+        vim.keymap.set('n', '<leader>rf', function()
+            vim.lsp.buf.formatting()
+        end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [R]e[f]ormat'}))
 
-    vim.keymap.set('n', '<leader>cn', ':cnext<CR>')
-    vim.keymap.set('n', '<leader>cp', ':cprev<CR>')
-end)
+        vim.keymap.set('n', '<leader>cn', ':cnext<CR>')
+        vim.keymap.set('n', '<leader>cp', ':cprev<CR>')
+
+    end
+})
 
 -- Telescope
 vim.keymap.set('n', '<leader>f?', require('telescope.builtin').oldfiles, { desc = "[?] Find recently opened files" })
@@ -82,7 +86,7 @@ vim.keymap.set('n', '<leader>ff', function()
 	require('telescope.builtin').find_files({ hidden = true })
 end, { desc = "[F]ind [F]iles" })
 vim.keymap.set('n', '<leader>fg', function()
-	require('telescope.builtin').live_grep({ 
+	require('telescope.builtin').live_grep({
         glob_pattern= "!package-lock.json",
         additional_args = { "--hidden" }
     })
