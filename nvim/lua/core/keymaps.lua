@@ -100,6 +100,11 @@ vim.keymap.set('n', '<leader>st', ':e %:r.ts<CR>', { desc = "Switch to Component
 vim.keymap.set('n', '<leader>sh', ':e %:r.html<CR>', { desc = "Switch to HTML", silent = true })
 vim.keymap.set('n', '<leader>sc', ':e %:r.scss<CR>', { desc = "Switch to SCSS", silent = true })
 
+-- NvimTree
+vim.keymap.set("n", "<leader>ee", ":NvimTreeToggle<CR>", { desc = "Toggle File Explorer" })
+vim.keymap.set("n", "<leader>er", ":NvimTreeFocus<CR>", { desc = "Toggle Focus to File Explorer"})
+vim.keymap.set("n", "<leader>ef", ":NvimTreeFindFile<CR>", { desc =" Find File in File Explorer"})
+
 -- Oil
 vim.keymap.set('n', '<leader>o', ':Oil --float<CR>', { desc = "Open Parent Directory", silent = true })
 vim.keymap.set('n', '<F5>', '<C-l>', { desc = "Refresh Oil", silent = true, remap = true })
