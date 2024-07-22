@@ -62,6 +62,23 @@ return {
                     lua_ls = function()
                         require('lspconfig').lua_ls.setup({ capabilities = lsp_capabilities })
                     end,
+                    eslint = function()
+                        require('lspconfig').eslint.setup({ 
+                            capabilities = lsp_capabilities, 
+                            filetypes = {
+                                'javascript',
+                                'javascriptreact',
+                                'javascript.jsx',
+                                'typescript',
+                                'typescriptreact',
+                                'typescript.tsx',
+                                'vue',
+                                'svelte',
+                                'astro',
+                                'html'
+                            },
+                        })
+                    end,
                     -- angular
                     angularls = function()
                         local lsp_util = require('lspconfig.util');
