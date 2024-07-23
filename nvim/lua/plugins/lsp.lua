@@ -110,6 +110,7 @@ return {
                             on_attach = function(client, bufnr)
                                 -- organize imports on save
                                 vim.api.nvim_create_autocmd("BufWritePre", {
+                                    buffer = bufnr,
                                     callback = organize_imports,
                                 })
 
