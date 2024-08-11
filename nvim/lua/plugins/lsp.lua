@@ -4,7 +4,6 @@ return {
         lazy = false,
         config = true,
     },
-
     -- Autocompletion
     {
         'hrsh7th/nvim-cmp',
@@ -34,7 +33,6 @@ return {
             })
         end
     },
-
     -- LSP
     {
         'neovim/nvim-lspconfig',
@@ -55,16 +53,16 @@ return {
             end
 
             require('mason-lspconfig').setup({
-                ensure_installed = {'angularls','tsserver','html', 'lua_ls', 'eslint','cssls', 'csharp_ls'},
+                ensure_installed = {'angularls', 'html', 'lua_ls', 'eslint','cssls', 'csharp_ls'},
                 handlers = {
-                    default_setup, 
+                    default_setup,
                     -- lua
                     lua_ls = function()
                         require('lspconfig').lua_ls.setup({ capabilities = lsp_capabilities })
                     end,
                     eslint = function()
-                        require('lspconfig').eslint.setup({ 
-                            capabilities = lsp_capabilities, 
+                        require('lspconfig').eslint.setup({
+                            capabilities = lsp_capabilities,
                             filetypes = {
                                 'javascript',
                                 'javascriptreact',
@@ -86,54 +84,36 @@ return {
                             capabilities = lsp_capabilities,
                             root_dir = lsp_util.root_pattern('angular.json')
                         })
-                    end,
-                    -- typescript
-                    tsserver = function()
-                        -- organize imports
-                        local function organize_imports()
-                            local params = {
-                                command = "_typescript.organizeImports",
-                                arguments = {vim.api.nvim_buf_get_name(0)},
-                                title = ""
-                            }
-                            vim.lsp.buf.execute_command(params)
-                        end
-
-                        require('lspconfig').tsserver.setup({
-                            capabilities = lsp_capabilities,
-                            init_options = {
-                                preferences = {
-                                    organizeImportsIgnoreCase = true,
-                                    importModuleSpecifierPreference = 'project-relative',
-                                }
-                            },
-                            on_attach = function(client, bufnr)
-                                -- organize imports on save
-                                vim.api.nvim_create_autocmd("BufWritePre", {
-                                    buffer = bufnr,
-                                    callback = organize_imports,
-                                })
-
-                                -- keymaps for imports
-                                vim.keymap.set('n', '<leader>ro', function()
-                                    organize_imports()
-                                end, { buffer = bufnr, remap = false, desc = "Organize Imports"})
-
-                                vim.keymap.set('n', '<leader>ri', function()
-                                    vim.lsp.buf.code_action({
-                                        apply = true,
-                                        context = {
-                                            only = { 'source.addMissingImports.ts' },
-                                            diagnostics = {},
-                                        },
-                                    })
-                                end, { buffer = bufnr, remap = false, desc = "Add missing Imports"})
-
-                            end
-                        })
                     end
                 }
             })
         end
+    },
+    -- TypeScript
+    {
+        "pmizio/typescript-tools.nvim",
+        dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+        ft = { "typescript", "typescriptreact" },
+        event = { "BufReadPre", "BufNewFile" },
+        config = function()
+            require("typescript-tools").setup({
+                capabilities = lsp_capabilities,
+                on_attach = function(_, bufnr)
+                    vim.keymap.set("n", "<leader>ro", "<cmd>TSToolsOrganizeImports<cr>", { buffer = bufnr, remap = false, desc = "Organize Imports" })
+                    vim.keymap.set("n", "<leader>ri", "<cmd>TSToolsAddMissingImports<cr>", { buffer = bufnr, remap = false, desc = "Add Missing Imports" })
+
+                    vim.api.nvim_create_autocmd("BufWritePre", {
+                        pattern = "*.ts*",
+                        command = ":TSToolsOrganizeImports sync",
+                    })
+                end,
+                 settings = {
+                    tsserver_file_preferences = {
+                        organizeImportsIgnoreCase = true,
+                        importModuleSpecifierPreference = 'project-relative',
+                    },
+                },
+            })
+       end,
     }
 }
