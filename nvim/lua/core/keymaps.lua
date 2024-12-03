@@ -65,7 +65,17 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
         -- Refactorings
         vim.keymap.set('n', '<leader>rr', function()
-            vim.lsp.buf.rename()
+            local prompt_opts = {
+                prompt = "New Name: ",
+                default = vim.fn.expand("<cword>"),
+            }
+            vim.ui.input(prompt_opts, function(input)
+            if not input or #input == 0 then
+              return
+            end
+
+            vim.lsp.buf.rename(input)
+            end)
         end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [R]ename [r]efac otor'}))
         vim.keymap.set('n', '<leader>.', function()
             vim.lsp.buf.code_action()
