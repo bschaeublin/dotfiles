@@ -19,6 +19,9 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.gitconfig" -Target ".\g
 # create symlink for nvim config
 New-Item -ItemType SymbolicLink -Path "$env:LOCALAPPDATA\nvim" -Target ".\nvim"
 
+# create symlink for windsurf
+New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Windsurf\User\settings.json" -Target ".\Windsurf\User\settings.json"
+
 # make sure userhome ("HOME" environment-variable) is explicit mapped to a local folder (C:/Users/Username).
 [System.Environment]::SetEnvironmentVariable('HOME', $env:USERPROFILE, 'User')
 

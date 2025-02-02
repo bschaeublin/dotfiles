@@ -1,0 +1,62 @@
+{
+    "windsurf.autocompleteSpeed": "fast",
+    "workbench.colorTheme": "Catppuccin Macchiato",
+    "workbench.iconTheme": "catppuccin-macchiato",
+    "windsurf.autoExecutionPolicy": "off",
+    "windsurf.rememberLastModelSelection": true,
+    "vim.easymotion": true,
+    "vim.leader": " ",
+    "vim.visualModeKeyBindings": [
+        { "before": ["<"], "commands": ["editor.action.outdentLines"] },
+        { "before": [">"], "commands": ["editor.action.indentLines"] },
+        {
+            "before": [ "K" ],
+            "commands": [ "editor.action.moveLinesUpAction" ]
+        },
+        {
+            "before": [ "J" ],
+            "commands": [ "editor.action.moveLinesDownAction" ]
+        }
+    ],
+    "vim.insertModeKeyBindings": [
+    ],
+    "vim.normalModeKeyBindings": [
+        { "before": ["<leader>", "s", "t"], "commands": ["angular.goToComponentWithTemplateFile"], "when": "editorTextFocus" },
+        { "before": ["<leader>", "s", "h"], "commands": ["angular.goToTemplateForComponent"], "when": "editorTextFocus" },
+
+        { "before": ["<C-h>"], "after": ["<C-w>", "h"] },
+        { "before": ["<C-j>"], "after": ["<C-w>", "j"] },
+        { "before": ["<C-k>"], "after": ["<C-w>", "k"] },
+        { "before": ["<C-l>"], "after": ["<C-w>", "l"] },
+
+        { "before": ["U"], "after": ["<C-u>", "zz"] },
+        { "before": ["D"], "after": ["<C-d>", "zz"] },
+        { "before": ["n"], "after": ["n", "zzz", "v"] },
+        { "before": ["N"], "after": ["N", "zzz", "v"] },
+        
+        { "before": ["<leader>", "f"], "commands": ["workbench.action.quickOpen"] },
+        
+        { "before": ["<leader>", "k"], "commands": ["editor.action.triggerSuggest"] },
+        { "before": ["<leader>", "g", "i"], "commands": ["editor.action.triggerParameterHints"] },
+        { "before": ["<leader>", "g", "D"], "commands": ["editor.action.peekDefinition"] },
+        { "before": ["<leader>", "g", "d"], "commands": ["editor.action.revealDefinition"] },
+        { "before": ["<leader>", "g", "r"], "commands": ["editor.action.goToReferences"] },
+        { "before": ["<leader>", "g", "h"], "commands": ["editor.action.showHover"] },
+        { "before": ["<leader>", "."], "commands": ["editor.action.quickFix"] },
+        { "before": ["<leader>", "r", "r"], "commands": ["editor.action.rename"] },
+        { "before": ["<leader>", "r", "f"], "commands": ["editor.action.formatDocument"] },
+        
+        {
+            "before": [ "K" ],
+            "commands": [ "editor.action.moveLinesUpAction" ]
+        },
+        {
+            "before": [ "J" ],
+            "commands": [ "editor.action.moveLinesDownAction" ]
+        }
+    ],
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "security.workspace.trust.untrustedFiles": "open",
+}
