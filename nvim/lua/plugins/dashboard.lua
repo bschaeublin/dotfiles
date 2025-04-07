@@ -26,13 +26,13 @@ return {
                     {
                         desc = '🖹 Config',
                         group = 'Number',
-                        action = 'e ~/AppData/Local/nvim/init.lua',
+                        action = 'e ~/dotfiles/nvim/lua/init.lua',
                         key = 'e',
                     },
                     {
                         desc = '⌨  Keymap',
                         group = 'Number',
-                        action = 'e ~/AppData/Local/nvim/lua/core/keymaps.lua',
+                        action = 'e ~/dotfiles/nvim/lua/keymaps.lua',
                         key = 's',
                     },
                 },

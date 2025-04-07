@@ -3,7 +3,7 @@ return {
       'numToStr/FTerm.nvim',
       config = function()
           require('FTerm').setup({
-              cmd = "cmd.exe",
+              cmd = "bash",
 	      border = "rounded",
               dimensions = {
 	          height = 0.7,
