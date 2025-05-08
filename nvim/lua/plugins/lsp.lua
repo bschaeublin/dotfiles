@@ -63,6 +63,7 @@ return {
                     eslint = function()
                         require('lspconfig').eslint.setup({
                             capabilities = lsp_capabilities,
+                            flat_config = true,
                             filetypes = {
                                 'javascript',
                                 'javascriptreact',
