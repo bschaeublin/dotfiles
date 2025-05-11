@@ -1,0 +1,95 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 38,
+    "spacing": 4,
+
+    "modules-left": ["hyprland/workspaces"],
+    "modules-center": ["clock"],
+    "modules-right": ["tray", "cpu", "pulseaudio", "custom/power"],
+
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九", "10": "十",
+            "active": "",
+            "default": "",
+            "empty": "",
+            "urgent": ""
+        },
+        "persistent-workspaces": {
+            "*": 5
+        },
+        "all-outputs": true,
+        "on-click": "activate"
+    },
+
+    "clock": {
+        "format": "{:%H:%M }",
+        "format-alt": "{:%A, %d. %B %Y (%H:%M)}", // Adjusted for typical Swiss date format
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "mode-mon-col": 3,
+            "weeks-pos": "right",
+            "on-scroll": 1,
+            "on-click-right": "mode",
+            "format": {
+                "months": "<span color='#b7bdf8'><b>{}</b></span>",
+                "days": "<span color='#a5adce'>{}</span>",
+                "weeks": "<span color='#8bd5ca'><b>{}</b></span>",
+                "weekdays": "<span color='#91d7e3'><b>{}</b></span>",
+                "today": "<span color='#f4dbd6' background='#363a4f'><b><u>{}</u></b></span>"
+            }
+        },
+        "timezone": "Europe/Zurich",
+        "locale": "de_CH.UTF-8",
+        "interval": 30
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 8
+    },
+
+    "cpu": {
+        "format": "CPU: {usage}% <span font='Font Awesome 6 Free'></span>",
+        "tooltip-format": "CPU Load: {load}%\nAvg Freq: {avg_frequency} GHz",
+        "interval": 5,
+        "states": {
+            "warning": 70,
+            "critical": 90
+        },
+        "on-click": "foot -e htop"
+    },
+
+    "pulseaudio": {
+        "format": "{volume}% {icon}  {format_source}",
+        "format-bluetooth": "{volume}% {icon} ",
+        "format-muted": " Muted",
+        "format-source": " {volume}%",
+        "format-source-muted": " Muted",
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "scroll-step": 5,
+        "on-click": "pavucontrol",
+        "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+        "on-click-middle": "pactl set-source-mute @DEFAULT_SOURCE@ toggle",
+        "tooltip-format": "{desc} ({volume}%)",
+    },
+
+
+    "custom/power": {
+        "format": "",
+        "tooltip": false,
+        "on-click": "wlogout &",
+        "exec-on-event": false
+    }
+}
