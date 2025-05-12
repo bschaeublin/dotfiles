@@ -1,7 +1,5 @@
-/* Import Catppuccin Macchiato color definitions */
-@import "macchiato.css"; /* Make sure macchiato.css is in ~/.config/waybar/ */
+@import "macchiato.css";
 
-/* General Bar Styling */
 window#waybar {
     background-color: @base;
     color: @text;
@@ -17,18 +15,19 @@ window#waybar.hidden {
     opacity: 0.2;
 }
 
-/* General module styling */
 #workspaces button,
 #clock,
 #pulseaudio,
 #cpu,
+#temperature#cpu,
+#custom-gpu-usage,
+#temperature#gpu,
 #memory,
-#custom-gpu,
 #custom-power,
 #tray {
     background-color: @surface0;
-    padding: 2px 10px; /* Vertical Horizontal */
-    margin: 4px 3px; /* Vertical Horizontal */
+    padding: 2px 10px;
+    margin: 4px 3px;
     border-radius: 8px;
     border: 1px solid @surface0;
 }
@@ -37,28 +36,67 @@ window#waybar.hidden {
 #clock:hover,
 #pulseaudio:hover,
 #cpu:hover,
+#temperature#cpu:hover,
+#custom-gpu-usage:hover,
+#temperature#gpu:hover,
 #memory:hover,
-#custom-gpu:hover,
 #custom-power:hover {
     background-color: @surface1;
     border: 1px solid @overlay1;
 }
 
-/* Workspaces */
+#cpu,
+#temperature#cpu {
+    color: @teal;
+}
+
+#cpu {
+    margin-right: 0;
+    border-right-width: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#temperature#cpu {
+    margin-left: 0;
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+#custom-gpu-usage,
+#temperature#gpu {
+    color: @lavender;
+}
+
+#custom-gpu-usage {
+    margin-right: 0;
+    border-right-width: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#temperature#gpu {
+    margin-left: 0;
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
 #workspaces {
     background: @surface0;
-    margin: 4px 4px; /* Matches other modules */
-    padding: 0px 5px; /* Add some padding inside the workspace module */
+    margin: 4px 4px;
+    padding: 0px 5px;
     border-radius: 8px;
 }
 #workspaces button {
     color: @subtext0;
     background-color: transparent;
     border-color: transparent;
-    padding: 2px 5px; /* Padding for individual workspace buttons */
-    margin: 0px 1px; /* Margin between workspace buttons */
-    min-width: 20px; /* Ensure buttons have some width */
-    border-radius: 6px; /* Slightly smaller radius for buttons */
+    padding: 2px 5px;
+    margin: 0px 1px;
+    min-width: 20px;
+    border-radius: 6px;
 }
 #workspaces button.active {
     background-color: @mauve;
@@ -75,17 +113,15 @@ window#waybar.hidden {
     color: @crust;
 }
 #workspaces button:hover {
-    background-color: @surface1; /* Use surface1 for hover on buttons */
+    background-color: @surface1;
     color: @text;
     border-color: @overlay1;
 }
 
-/* Clock */
 #clock {
     color: @mauve;
 }
 
-/* Volume */
 #pulseaudio {
     color: @blue;
 }
@@ -96,18 +132,26 @@ window#waybar.hidden {
     color: @peach;
 }
 
-/* CPU */
-#cpu {
-    color: @green;
-}
-#cpu.warning {
+#cpu.warning,
+#temperature#cpu.warning {
     color: @yellow;
 }
-#cpu.critical {
+#cpu.critical,
+#temperature#cpu.critical {
     color: @red;
+    /* Removed invalid mix() function */
 }
 
-/* Memory */
+#custom-gpu-usage.warning,
+#temperature#gpu.warning {
+    color: @yellow;
+}
+#custom-gpu-usage.critical,
+#temperature#gpu.critical {
+    color: @red;
+    /* Removed invalid mix() function */
+}
+
 #memory {
     color: @teal;
 }
@@ -118,46 +162,34 @@ window#waybar.hidden {
     color: @red;
 }
 
-/* Custom GPU */
-#custom-gpu {
-    color: @flamingo;
-}
-
-/* Custom Power */
 #custom-power {
     color: @rosewater;
     margin-right: 6px;
 }
 
-/* Tray */
 #tray {
     padding: 2px 5px;
 }
 #tray > .passive {
-    /* For passive tray items */
     opacity: 0.7;
 }
 #tray > .active {
-    /* For active tray items, if needed */
-    /* No specific style, inherits from #tray */
 }
 #tray > .needs-attention {
-    /* For items needing attention */
     background-color: @yellow;
     color: @crust;
-    border-radius: 8px; /* Match other module rounding */
+    border-radius: 8px;
 }
 
-/* Tooltip Styling */
 tooltip {
     background-color: @mantle;
     color: @text;
     border-radius: 8px;
     border: 1px solid @overlay0;
-    padding: 8px; /* Overall padding for the tooltip box */
+    padding: 8px;
 }
 
 tooltip label {
     color: @text;
-    padding: 5px; /* Padding for the text inside the tooltip */
+    padding: 5px;
 }

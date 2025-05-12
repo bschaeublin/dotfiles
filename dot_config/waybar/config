@@ -3,15 +3,34 @@
     "position": "top",
     "height": 38,
     "spacing": 4,
-
-    "modules-left": ["hyprland/workspaces"],
-    "modules-center": ["clock"],
-    "modules-right": ["tray", "cpu", "pulseaudio", "custom/power"],
-
+    "modules-left": [
+        "hyprland/workspaces"
+    ],
+    "modules-center": [
+        "clock"
+    ],
+    "modules-right": [
+        "tray",
+        "cpu",
+        "temperature#cpu",
+        "custom/gpu-usage",
+        "temperature#gpu",
+        "pulseaudio",
+        "custom/power"
+    ],
     "hyprland/workspaces": {
         "format": "{icon}",
         "format-icons": {
-            "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九", "10": "十",
+            "1": "一",
+            "2": "二",
+            "3": "三",
+            "4": "四",
+            "5": "五",
+            "6": "六",
+            "7": "七",
+            "8": "八",
+            "9": "九",
+            "10": "十",
             "active": "",
             "default": "",
             "empty": "",
@@ -23,10 +42,9 @@
         "all-outputs": true,
         "on-click": "activate"
     },
-
     "clock": {
         "format": "{:%H:%M }",
-        "format-alt": "{:%A, %d. %B %Y (%H:%M)}", // Adjusted for typical Swiss date format
+        "format-alt": "{:%A, %d. %B %Y (%H:%M)}",
         "tooltip-format": "<tt><small>{calendar}</small></tt>",
         "calendar": {
             "mode": "month",
@@ -46,14 +64,12 @@
         "locale": "de_CH.UTF-8",
         "interval": 30
     },
-
     "tray": {
         "icon-size": 18,
         "spacing": 8
     },
-
     "cpu": {
-        "format": "CPU: {usage}% <span font='Font Awesome 6 Free'></span>",
+        "format": "CPU {usage}% ",
         "tooltip-format": "CPU Load: {load}%\nAvg Freq: {avg_frequency} GHz",
         "interval": 5,
         "states": {
@@ -62,7 +78,30 @@
         },
         "on-click": "foot -e htop"
     },
-
+    "temperature#cpu": {
+        "tooltip": true,
+        "hwmon-path": "/sys/class/hwmon/hwmon4/temp1_input",
+        "critical-threshold": 85,
+        "format-critical": "{temperatureC}°C 🔥",
+        "format": "{temperatureC}°C",
+        "interval": 5
+    },
+    "custom/gpu-usage": {
+        "exec": "cat /sys/class/drm/card1/device/gpu_busy_percent",
+        "return-type": "text",
+        "format": "GPU {}% 󰍹",
+        "tooltip": true,
+        "tooltip_format": "AMD GPU Usage",
+        "interval": 2
+    },
+    "temperature#gpu": {
+        "tooltip": true,
+        "hwmon-path": "/sys/class/hwmon/hwmon2/temp2_input",
+        "critical-threshold": 95,
+        "format-critical": "{temperatureC}°C 🥵",
+        "format": "{temperatureC}°C",
+        "interval": 5
+    },
     "pulseaudio": {
         "format": "{volume}% {icon}  {format_source}",
         "format-bluetooth": "{volume}% {icon} ",
@@ -76,16 +115,18 @@
             "phone": "",
             "portable": "",
             "car": "",
-            "default": ["", "", ""]
+            "default": [
+                "",
+                "",
+                ""
+            ]
         },
         "scroll-step": 5,
         "on-click": "pavucontrol",
         "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
         "on-click-middle": "pactl set-source-mute @DEFAULT_SOURCE@ toggle",
-        "tooltip-format": "{desc} ({volume}%)",
+        "tooltip-format": "{desc} ({volume}%)"
     },
-
-
     "custom/power": {
         "format": "",
         "tooltip": false,
