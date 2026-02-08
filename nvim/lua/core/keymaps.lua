@@ -3,6 +3,10 @@ vim.keymap.set('n', '<C-h>', '<C-w>h', { desc = "Jump to left panel", remap = tr
 vim.keymap.set('n', '<C-j>', '<C-w>j', { desc = "Jump to lower panel", remap = true })
 vim.keymap.set('n', '<C-k>', '<C-w>k', { desc = "Jump to upper panel", remap = true })
 vim.keymap.set('n', '<C-l>', '<C-w>l', { desc = "Jump to right panel", remap = true })
+vim.keymap.set('t', '<C-h>', '<C-\\><C-n><C-w>h', { desc = "Jump to left panel from terminal" })
+vim.keymap.set('t', '<C-j>', '<C-\\><C-n><C-w>j', { desc = "Jump to lower panel from terminal" })
+vim.keymap.set('t', '<C-k>', '<C-\\><C-n><C-w>k', { desc = "Jump to upper panel from terminal" })
+vim.keymap.set('t', '<C-l>', '<C-\\><C-n><C-w>l', { desc = "Jump to right panel from terminal" })
 
 -- buffers
 vim.keymap.set("n", "<A-h>", "<cmd>bprevious<cr>", { desc = "Prev Buffer", silent = true })
@@ -34,13 +38,13 @@ vim.api.nvim_create_autocmd('LspAttach', {
         local attach_opts = { buffer = event.buf, remap = false }
         -- Diagnostics mappings
         vim.keymap.set('n', '<leader>k', function()
-            vim.lsp.diagnostic.open_float(0, { scope='line' })
+            vim.diagnostic.open_float({ scope = 'line' })
         end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Open diagnostics'}))
         vim.keymap.set('n', '<leader>kn', function()
-            vim.lsp.diagnostic.goto_next()
+            vim.diagnostic.goto_next()
         end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Next diagnostic'}))
         vim.keymap.set('n', '<leader>kp', function()
-            vim.lsp.diagnostic.goto_prev()
+            vim.diagnostic.goto_prev()
         end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Previous diagnostic'}))
 
         -- Code navigation and Discovering
@@ -81,7 +85,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
             vim.lsp.buf.code_action()
         end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] Code action'}))
         vim.keymap.set('n', '<leader>rf', function()
-            vim.lsp.buf.formatting()
+            vim.lsp.buf.format()
         end, vim.tbl_extend('error', attach_opts, { desc = '[LSP] [R]e[f]ormat'}))
 
         vim.keymap.set('n', '<leader>cn', ':cnext<CR>')
@@ -90,40 +94,29 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end
 })
 
--- Telescope
-vim.keymap.set('n', '<leader>f?', require('telescope.builtin').oldfiles, { desc = "[?] Find recently opened files" })
-vim.keymap.set('n', '<leader>ff', function()
-	require('telescope.builtin').find_files({ hidden = true })
-end, { desc = "[F]ind [F]iles" })
-vim.keymap.set('n', '<leader>fg', function()
-	require('telescope.builtin').live_grep({
-        glob_pattern= "!package-lock.json",
-        additional_args = { "--hidden" }
-    })
-end, { desc = "[F]ind by [G]rep" })
-vim.keymap.set('n', '<leader>fb', require('telescope.builtin').buffers, { desc = "[F]ind [B]uffers" })
-vim.keymap.set('n', '<leader>fb', require('telescope.builtin').git_branches, { desc = "[F]ind [B]ranches" })
-vim.keymap.set('n', '<leader>ds', require('telescope.builtin').lsp_document_symbols, { desc = "[D]ocument [S]ymbols" })
+-- Snacks Picker
+vim.keymap.set('n', '<leader>f?', function() Snacks.picker.recent() end, { desc = "Find recently opened files" })
+vim.keymap.set('n', '<leader>ff', function() Snacks.picker.files({ hidden = true }) end, { desc = "Find Files" })
+vim.keymap.set('n', '<leader>fg', function() Snacks.picker.grep({ hidden = true }) end, { desc = "Find by Grep" })
+vim.keymap.set('n', '<leader>fb', function() Snacks.picker.buffers() end, { desc = "Find Buffers" })
+vim.keymap.set('n', '<leader>fB', function() Snacks.picker.git_branches() end, { desc = "Find Branches" })
+vim.keymap.set('n', '<leader>ds', function() Snacks.picker.lsp_symbols() end, { desc = "Document Symbols" })
 
 -- Angular
 vim.keymap.set('n', '<leader>st', ':e %:r.ts<CR>', { desc = "Switch to Component", silent = true })
 vim.keymap.set('n', '<leader>sh', ':e %:r.html<CR>', { desc = "Switch to HTML", silent = true })
 vim.keymap.set('n', '<leader>sc', ':e %:r.scss<CR>', { desc = "Switch to SCSS", silent = true })
 
--- NvimTree
-vim.keymap.set("n", "<leader>ee", ":NvimTreeToggle<CR>", { desc = "Toggle File Explorer" })
-vim.keymap.set("n", "<leader>er", ":NvimTreeFocus<CR>", { desc = "Toggle Focus to File Explorer"})
-vim.keymap.set("n", "<leader>ef", ":NvimTreeFindFile<CR>", { desc =" Find File in File Explorer"})
-
 -- Oil
 vim.keymap.set('n', '<leader>o', ':Oil --float<CR>', { desc = "Open Parent Directory", silent = true })
 vim.keymap.set('n', '<F5>', '<C-l>', { desc = "Refresh Oil", silent = true, remap = true })
 
--- FTerm
-vim.keymap.set('n', '<A-i>', require('FTerm').toggle, { desc = "Show Floating Terminal" })
-vim.keymap.set('t', '<A-i>', '<C-\\><C-n>:lua require("FTerm").toggle()<CR>', { desc = "Close Floating Terminal" })
+-- Terminal
+vim.keymap.set('n', '<A-i>', function() Snacks.terminal.toggle() end, { desc = "Toggle Floating Terminal" })
+vim.keymap.set('t', '<A-i>', function() Snacks.terminal.toggle() end, { desc = "Toggle Floating Terminal" })
 
 -- Surround
 vim.keymap.set('n', '<leader>)', 'ysiw)', { desc = "Surround with Parentheses" })
 vim.keymap.set('n', '<leader>}', 'ysiw}', { desc = "Surround with Curly Braces" })
 vim.keymap.set('n', '<leader>]', 'ysiw]', { desc = "Surround with Square Brackets" })
+

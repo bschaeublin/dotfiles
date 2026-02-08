@@ -8,16 +8,11 @@ return {
        require("catppuccin").setup({
                 flavour = 'macchiato',
                 integrations = {
-                    cmp = true,
+                    blink_cmp = true,
                     gitsigns = true,
                     treesitter = true,
-                    dashboard = true,
+                    snacks = true,
                     mason = true,
-                    treesitter = true,
-                    telescope = {
-                        enabled = true,
-                    },
-                    which_key = true,
                     native_lsp = {
                         enabled = true,
                         virtual_text = {

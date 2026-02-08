@@ -105,6 +105,8 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "git.openRepositoryInParentFolders": "never",
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
   "eslint.useFlatConfig": true,
   "eslint.debug": true
 }
