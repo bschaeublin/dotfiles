@@ -11,7 +11,7 @@ return {
         config = function()
             require('nvim-treesitter.configs').setup {
                 -- Add languages to be installed here that you want installed for treesitter
-                ensure_installed = { "lua", "typescript", "javascript", "markdown", "html", "css", "vimdoc", "diff", "xml", "json", "yaml", "c_sharp" },
+                ensure_installed = { "lua", "typescript", "javascript", "markdown", "html", "css", "vimdoc", "diff", "xml", "json", "yaml", "c_sharp", "python" },
 
                 highlight = {
                     enable = true, -- false will disable the whole extension

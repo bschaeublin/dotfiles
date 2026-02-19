@@ -16,7 +16,7 @@ return {
         dependencies = { 'williamboman/mason.nvim', 'neovim/nvim-lspconfig' },
         config = function()
             require('mason-lspconfig').setup({
-                ensure_installed = { 'angularls', 'html', 'lua_ls', 'eslint', 'cssls', 'ts_ls' },
+                ensure_installed = { 'angularls', 'html', 'lua_ls', 'eslint', 'cssls', 'ts_ls', 'pyright', 'ruff' },
                 automatic_enable = true,
             })
         end,
