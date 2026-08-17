@@ -256,9 +256,13 @@ for i = 1, 5 do
     hl.bind(mainMod .. " + SHIFT + " .. i,   hl.dsp.window.move({ workspace = i }))
 end
 
--- Scroll through existing workspaces with mainMod + scroll
-hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "m+1" }))
-hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "m-1" }))
+-- Scroll through existing workspaces with mainMod + scroll.
+-- "e" = open workspaces, across all monitors. The old config used "m+1"/"m-1"
+-- ("open workspaces on the *current monitor*"), which was a silent no-op: the
+-- workspace rules above pin 1/3/5 to DP-2 and 2/4 to DP-1, so each monitor
+-- rarely has more than one open workspace to move between.
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
 
 -- Move/resize windows with mainMod + LMB/RMB and dragging
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
