@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""Switch hyprpaper between the day and night wallpaper at local sunrise/sunset.
+"""Pick the hyprpaper wallpaper for the current time of day.
 
-Usage: hypr-daynight-wallpaper [day|night|auto] [--print]
+Daylight gets one image. The night runs as a short story in hourly frames from
+20:00 to midnight -- someone up by the fire turns in, the camp goes quiet and
+the sky deepens -- so the desktop changes as the evening does.
+
+Usage: hypr-daynight-wallpaper [auto|day|night|20|21|22|23|24] [--print]
 """
 import math
 import os
@@ -15,10 +19,9 @@ from datetime import date, datetime, timezone
 LAT = float(os.environ.get("HYPR_LAT", "52.5200"))
 LON = float(os.environ.get("HYPR_LON", "13.4050"))
 
-WALLPAPERS = {
-    "day": os.path.expanduser("~/.config/hypr/wallpapers/macchiato-day.png"),
-    "night": os.path.expanduser("~/.config/hypr/wallpapers/macchiato-night.png"),
-}
+WALL_DIR = os.path.expanduser("~/.config/hypr/wallpapers")
+DAY = os.path.join(WALL_DIR, "macchiato-day.jpg")
+BEATS = ["20", "21", "22", "23", "24"]      # "24" also covers midnight to dawn
 
 
 def sun_events(lat, lon, day):
@@ -43,9 +46,25 @@ def phase_now():
     now = datetime.now(timezone.utc)
     ev = sun_events(LAT, LON, date.today())
     if ev is None:                                    # no sunrise/sunset today
-        return "day" if 6 <= datetime.now().hour < 18 else "night", None
+        return ("day" if 6 <= datetime.now().hour < 18 else "night"), None
     rise, set_ = ev
     return ("day" if rise <= now < set_ else "night"), (rise, set_)
+
+
+def night_beat(now=None):
+    """Which story frame the current hour belongs to."""
+    h = (now or datetime.now()).hour
+    if 20 <= h <= 23:
+        return str(h)
+    if h < 6:
+        return "24"                                   # after midnight, deepest
+    return "20"                                       # dark before 20:00, in winter
+
+
+def wallpaper_for(phase):
+    if phase == "day":
+        return DAY
+    return os.path.join(WALL_DIR, f"macchiato-night-{night_beat()}.jpg")
 
 
 def hyprctl(*args):
@@ -61,8 +80,7 @@ def paper_socket():
     return os.path.join(rt, "hypr", sig, ".hyprpaper.sock")
 
 
-def apply(phase):
-    path = WALLPAPERS[phase]
+def apply(path):
     if not os.path.exists(path):
         sys.exit(f"missing wallpaper: {path}")
     sock = paper_socket()
@@ -81,22 +99,31 @@ def apply(phase):
     r = hyprctl("hyprpaper", "wallpaper", f",{path}")
     if r.returncode != 0:
         sys.exit(f"failed to set wallpaper: {r.stdout.strip()} {r.stderr.strip()}")
-    print(f"wallpaper -> {phase}")
+    print(f"wallpaper -> {os.path.basename(path)}")
 
 
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    want = args[0] if args else "auto"
+    want = next((a for a in sys.argv[1:] if not a.startswith("--")), "auto")
     phase, ev = phase_now()
-    if want in WALLPAPERS:
-        phase = want
-    elif want != "auto":
-        sys.exit("usage: hypr-daynight-wallpaper [day|night|auto] [--print]")
+
+    if want in BEATS:
+        path = os.path.join(WALL_DIR, f"macchiato-night-{want}.jpg")
+    elif want == "day":
+        path = DAY
+    elif want == "night":
+        path = os.path.join(WALL_DIR, f"macchiato-night-{night_beat()}.jpg")
+    elif want == "auto":
+        path = wallpaper_for(phase)
+    else:
+        sys.exit(f"usage: {os.path.basename(sys.argv[0])} "
+                 f"[auto|day|night|{'|'.join(BEATS)}] [--print]")
+
     if "--print" in sys.argv:
         if ev:
             fmt = lambda d: d.astimezone().strftime("%H:%M")
             print(f"sunrise {fmt(ev[0])}  sunset {fmt(ev[1])}  -> {phase}")
         else:
             print(f"no sunrise/sunset today -> {phase}")
+        print(f"would set {os.path.basename(path)}")
         sys.exit(0)
-    apply(phase)
+    apply(path)

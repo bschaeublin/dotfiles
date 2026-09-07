@@ -84,14 +84,41 @@ def blur_1d(a, sigma):
     return np.convolve(np.pad(a, r, mode="edge"), k / k.sum(), mode="valid")
 
 
+_YY, _XX = np.mgrid[0:H, 0:W].astype(np.float64)
+
+
 def radial(cx, cy):
-    yy, xx = np.mgrid[0:H, 0:W].astype(np.float64)
-    return np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+    return np.sqrt((_XX - cx) ** 2 + (_YY - cy) ** 2)
 
 
 def add_glow(img, cx, cy, radius, color, strength, falloff=2.0):
-    g = np.exp(-((radial(cx, cy) / radius) ** falloff)) * strength
-    return img + g[..., None] * hex2rgb(color)
+    """Additive radial glow, evaluated only where it is not negligible."""
+    r = int(radius * 3.2) + 2
+    x0, x1 = max(0, int(cx) - r), min(W, int(cx) + r + 1)
+    y0, y1 = max(0, int(cy) - r), min(H, int(cy) + r + 1)
+    if x0 >= x1 or y0 >= y1:
+        return img
+    d = np.sqrt((_XX[y0:y1, x0:x1] - cx) ** 2 + (_YY[y0:y1, x0:x1] - cy) ** 2)
+    img[y0:y1, x0:x1] += (np.exp(-((d / radius) ** falloff)) * strength)[..., None] \
+        * hex2rgb(color)
+    return img
+
+
+def smoke_plume(img, x, y, strength, color, drift=26.0, rise=95.0, wobble=5.0,
+                spread=11.0):
+    for t in np.linspace(0, 1, 70):
+        img = add_glow(img, x + drift * t + 9 * math.sin(t * wobble), y - rise * t,
+                       3.0 + spread * t, color, strength * (1 - t))
+    return img
+
+
+def mix_hex(a, b, t):
+    c = hex2rgb(a) * (1 - t) + hex2rgb(b) * t
+    return "#%02x%02x%02x" % tuple(np.clip(c, 0, 255).astype(int))
+
+
+def scale_hex(c, k):
+    return "#%02x%02x%02x" % tuple(np.clip(hex2rgb(c) * k, 0, 255).astype(int))
 
 
 def draw_disc(img, cx, cy, r, color, softness=2.5):
@@ -201,6 +228,8 @@ def tent(d, x, ground, s, col):
               fill=col)
     d.line([(x + s * 0.62, ground), (x + s * 0.98, ground)], fill=col,
            width=max(1, int(s * 0.07)))                          # guy line
+    d.line([(x - s * 0.24, ground - s * 0.62), (x - s * 0.24, ground - s * 0.95)],
+           fill=col, width=max(1, int(s * 0.08)))                # stove pipe
 
 
 def finish(img, path, vignette=0.16, grain=1.8):
@@ -209,7 +238,11 @@ def finish(img, path, vignette=0.16, grain=1.8):
     img = img * (1.0 - vignette * r ** 2.2)[..., None]
     rng = np.random.default_rng(SEED + 7)
     img = img + rng.normal(0.0, grain, img.shape)   # dither: kills gradient banding
-    Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).save(path, optimize=True)
+    out = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
+    if path.lower().endswith((".jpg", ".jpeg")):
+        out.save(path, quality=94, subsampling=0, optimize=True)
+    else:
+        out.save(path, optimize=True)
     print(f"wrote {path}")
 
 
@@ -259,13 +292,7 @@ def make_day(path):
             treeline(ov, hs[4], "#241f34", dec_rng, 1500, 2540, 30, 20, 38)
         im = ov.onto(im)
         if i == 3:                                   # chimney smoke, after the cabin
-            x, gy = 2010, hs[3][2010]
-            sm = np.zeros((H, W))
-            for t in np.linspace(0, 1, 90):
-                px = x + 7 + 26 * t + 9 * math.sin(t * 5.0)
-                py = gy - 28 - 95 * t
-                sm += np.exp(-((radial(px, py) / (3.5 + 11 * t)) ** 2)) * (1 - t) * 0.037
-            im = im + np.clip(sm, 0, 0.5)[..., None] * hex2rgb("#e8d8e8")
+            im = smoke_plume(im, 2017, hs[3][2010] - 28, 0.037, "#e8d8e8")
         return im
 
     img = paint_ridges(img, [
@@ -276,14 +303,46 @@ def make_day(path):
 
 
 # ----------------------------------------------------------------------- night
-def make_night(path):
+# The night is a short story told in five frames, 20:00 to midnight: someone is
+# up by the fire, turns in, and the camp goes quiet while the sky deepens.
+NIGHT_SKY_EARLY = [
+    (0.00, "#0d0f1a"), (0.20, "#171a2b"), (0.40, "#222438"), (0.55, "#2f314c"),
+    (0.64, "#403c60"), (0.72, "#524475"), (1.00, "#5c4c78"),
+]
+NIGHT_SKY_LATE = [
+    (0.00, "#06070c"), (0.20, "#0c0d16"), (0.40, "#12141e"), (0.55, "#191b28"),
+    (0.64, "#222034"), (0.72, "#2b2640"), (1.00, "#302a46"),
+]
+NIGHT_RIDGES = [
+    ("#4e4d78", "#3d3c60"), ("#3e3d61", "#30304c"), ("#31314c", "#26263c"),
+    ("#26263c", "#1c1c2d"), ("#1a1a29", "#12121e"), ("#0f0f19", "#08080e"),
+]
+
+TENT_X, FIRE_X = 600, 662
+
+NIGHT_BEATS = [
+    dict(name="20", t=0.00, person=706, fire=1.00, tent_glow=0.00, smoke=0.00,
+         stag=780,  flies=30, meteor=None),
+    dict(name="21", t=0.25, person=634, fire=0.82, tent_glow=0.15, smoke=0.06,
+         stag=980,  flies=25, meteor=(900, 112, 286, 150)),
+    dict(name="22", t=0.50, person=None, fire=0.44, tent_glow=0.85, smoke=0.34,
+         stag=1180, flies=18, meteor=None),
+    dict(name="23", t=0.75, person=None, fire=0.17, tent_glow=0.52, smoke=0.52,
+         stag=None, flies=10, meteor=None),
+    dict(name="24", t=1.00, person=None, fire=0.04, tent_glow=0.10, smoke=0.60,
+         stag=None, flies=5,  meteor=(1520, 190, -252, 138)),
+]
+
+
+def make_night(path, beat):
+    t = beat["t"]
     rng = np.random.default_rng(SEED + 101)
     hs = heightfields()
-    img = sky_gradient([
-        (0.00, "#0b0c14"), (0.20, "#141625"), (0.40, "#1e2030"), (0.55, "#2a2c43"),
-        (0.64, "#3a3757"), (0.72, "#4a3f6b"), (1.00, "#54476f"),
-    ])
-    moon_x, moon_y = W * 0.735, H * 0.200
+    img = sky_gradient([(p, mix_hex(a, b, t))
+                        for (p, a), (_, b) in zip(NIGHT_SKY_EARLY, NIGHT_SKY_LATE)])
+
+    # The crescent sinks toward the west as the night wears on.
+    moon_x, moon_y = W * (0.600 + 0.285 * t), H * (0.155 + 0.240 * t)
 
     n = 2100
     sx = rng.random(n) * W
@@ -294,84 +353,96 @@ def make_night(path):
     star = np.zeros((H, W))
     np.add.at(star, (sy.astype(int), sx.astype(int)), mag * fade * near_moon)
 
-    # Ursa Major, faint but findable, upper left.
     dipper = [(300, 300), (395, 268), (487, 281), (566, 330),
               (648, 316), (742, 352), (806, 288)]
     for (px, py) in dipper:
         np.add.at(star, (py, px), 1.6)
     star = np.asarray(Image.fromarray((np.clip(star, 0, 1) * 255).astype(np.uint8))
                       .filter(ImageFilter.GaussianBlur(0.7))) / 255.0
-    img = img + (star * 230)[..., None] * (hex2rgb("#cad3f5") / 255)
+    img = img + (star * 230 * (0.85 + 0.45 * t))[..., None] * (hex2rgb("#cad3f5") / 255)
 
     ov = Overlay()
-    for a, b in zip(dipper, dipper[1:]):             # very faint join lines
-        ov.d.line([a, b], fill=rgba("#8aadf4", 34), width=1)
+    for a, b in zip(dipper, dipper[1:]):
+        ov.d.line([a, b], fill=rgba("#8aadf4", 30 + int(18 * t)), width=1)
     img = ov.onto(img)
 
     mw = fbm_2d(4, 3, 9, rng)
-    yy, xx = np.mgrid[0:H, 0:W].astype(np.float64)
-    dist = np.abs((yy - H * 0.22) - (xx - W * 0.5) * 0.26) / (H * 0.18)
-    img = img + (np.exp(-dist ** 2) * smoothstep((mw - 0.46) / 0.34) * 24)[..., None] \
-        * (hex2rgb("#b7bdf8") / 255)
+    dist = np.abs((_YY - H * 0.22) - (_XX - W * 0.5) * 0.26) / (H * 0.18)
+    img = img + (np.exp(-dist ** 2) * smoothstep((mw - 0.52) / 0.30)
+                 * 15)[..., None] * (hex2rgb("#b7bdf8") / 255)
 
-    # A meteor, upper right, fading as it falls.
-    for t in np.linspace(0, 1, 220):
-        px, py = 900 + 286 * t, 112 + 150 * t
-        img = add_glow(img, px, py, 1.5 + 1.3 * (1 - t), "#dce3fb",
-                       0.34 * (1 - t) ** 1.7, falloff=2.0)
+    if beat["meteor"]:
+        mx, my, dx, dy = beat["meteor"]
+        for k in np.linspace(0, 1, 200):
+            img = add_glow(img, mx + dx * k, my + dy * k, 1.5 + 1.3 * (1 - k),
+                           "#dce3fb", 0.34 * (1 - k) ** 1.7)
 
     img = add_glow(img, moon_x, moon_y, W * 0.24, "#8aadf4", 0.13, falloff=1.6)
-    img = add_glow(img, moon_x, moon_y, W * 0.038, "#c6d0f5", 0.26, falloff=2.0)
+    img = add_glow(img, moon_x, moon_y, W * 0.038, "#c6d0f5", 0.26)
     disc = np.clip((34 - radial(moon_x, moon_y)) / 2.2, 0, 1)
     bite = np.clip((34 - radial(moon_x + 15.5, moon_y - 8.5)) / 2.2, 0, 1)
     cres = (disc * (1 - bite))[..., None]
     img = img * (1 - cres) + hex2rgb("#eef1fd") * cres
 
-    img = add_glow(img, W * 0.60, H * 0.640, W * 0.32, "#8087a2", 0.26, falloff=1.8)
+    img = add_glow(img, W * 0.60, H * 0.640, W * 0.32, "#8087a2",
+                   0.26 * (1 - 0.65 * t), falloff=1.8)
 
-    dec_rng = np.random.default_rng(SEED + 31)       # same seed => same treelines
+    dec_rng = np.random.default_rng(SEED + 31)   # same terrain detail every frame
+    dark = 1 - 0.34 * t                          # ridges dim with the sky
+    tint = lambda c: scale_hex(c, dark)
 
     def decorate(im, i):
-        if i == 4:      # firelight goes down before the silhouettes on top of it
-            gy = hs[4][620]
-            im = add_glow(im, 654, gy - 5, 30, "#f5a97f", 0.30, falloff=1.8)
-            im = add_glow(im, 654, gy - 6, 6, "#f9e2af", 0.50, falloff=2.0)
+        if i == 4:
+            gy = hs[4][FIRE_X]
+            if beat["fire"] > 0.02:              # firelight, before anything on top
+                im = add_glow(im, FIRE_X, gy - 5, 30, "#f5a97f", 0.30 * beat["fire"],
+                              falloff=1.8)
+                im = add_glow(im, FIRE_X, gy - 6, 6, "#f9e2af", 0.50 * beat["fire"])
+            if beat["tent_glow"] > 0.02:         # lamplight leaking through canvas
+                im = add_glow(im, TENT_X, hs[4][TENT_X] - 12, 46, "#e0904a",
+                              0.20 * beat["tent_glow"], falloff=1.9)
         ov = Overlay()
         if i == 1:
-            treeline(ov, hs[1], "#302f4c", dec_rng, 60, 900, 26, 13, 22)
+            treeline(ov, hs[1], tint("#302f4c"), dec_rng, 60, 900, 26, 13, 22)
         elif i == 2:
-            treeline(ov, hs[2], "#26263c", dec_rng, 1300, 2500, 34, 15, 27)
-            x = 780
-            stamp(ov, "stag", x, hs[2][x] + 2, 30, "#1d1d2e", flip=True)
+            treeline(ov, hs[2], tint("#26263c"), dec_rng, 1300, 2500, 34, 15, 27)
+            if beat["stag"]:
+                x = beat["stag"]
+                stamp(ov, "stag", x, hs[2][x] + 2, 30, tint("#1d1d2e"), flip=True)
         elif i == 3:
-            treeline(ov, hs[3], "#1c1c2d", dec_rng, 100, 1500, 40, 17, 31)
+            treeline(ov, hs[3], tint("#1c1c2d"), dec_rng, 100, 1500, 40, 17, 31)
         elif i == 4:
-            treeline(ov, hs[4], "#101019", dec_rng, 1500, 2540, 30, 20, 38)
-            x = 620
-            tent(ov.d, x, hs[4][x] + 2, 30, rgba("#0b0b13"))
-            stamp(ov, "walker", 690, hs[4][690] + 2, 22, "#0b0b13", flip=True)
-            gx = 1100                                    # a lone tree on a high point
-            stamp(ov, "spruce_a", gx, hs[4][gx] + 2, 66, "#0b0b13")
-            stamp(ov, "owl", gx + 5, hs[4][gx] - 60, 26, "#0b0b13")
-
+            treeline(ov, hs[4], tint("#101019"), dec_rng, 1500, 2540, 30, 20, 38)
+            dark_col = tint("#0b0b13")
+            tent(ov.d, TENT_X, hs[4][TENT_X] + 2, 30,
+                 rgba(mix_hex(dark_col, "#9c6436", 0.36 * beat["tent_glow"])))
+            if beat["person"]:
+                x = beat["person"]
+                stamp(ov, "walker", x, hs[4][x] + 2, 22, dark_col,
+                      flip=x > FIRE_X)          # always facing the fire
+            gx = 1100                            # a lone tree on a high point
+            stamp(ov, "spruce_a", gx, hs[4][gx] + 2, 66, dark_col)
+            stamp(ov, "owl", gx + 5, hs[4][gx] - 60, 26, dark_col)
         im = ov.onto(im)
-        if i == 5:                                   # fireflies in the foreground
+        if i == 4 and beat["smoke"] > 0.02:      # from the stove pipe, in front
+            im = smoke_plume(im, TENT_X - 7, hs[4][TENT_X] - 30,
+                             0.020 * beat["smoke"], "#bdb8cc", drift=20, rise=80,
+                             spread=6.5)
+        if i == 5 and beat["flies"]:             # fireflies in the foreground
             ff = np.random.default_rng(SEED + 77)
-            for _ in range(30):
+            for k in range(beat["flies"]):
                 px = ff.uniform(0, W)
                 py = hs[5][int(px)] + ff.uniform(10, 120)
                 im = add_glow(im, px, py, ff.uniform(3, 6), "#eed49f",
-                              ff.uniform(0.14, 0.38), falloff=2.0)
+                              ff.uniform(0.14, 0.38) * (1 - 0.4 * t))
         return im
 
-    img = paint_ridges(img, [
-        ("#4e4d78", "#3d3c60"), ("#3e3d61", "#30304c"), ("#31314c", "#26263c"),
-        ("#26263c", "#1c1c2d"), ("#1a1a29", "#12121e"), ("#0f0f19", "#08080e"),
-    ], hs, decorate)
-    finish(img, path, vignette=0.22, grain=1.5)
+    img = paint_ridges(img, [(tint(a), tint(b)) for a, b in NIGHT_RIDGES], hs, decorate)
+    finish(img, path, vignette=0.22 + 0.05 * t, grain=1.5)
 
 
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "."
-    make_day(f"{out}/macchiato-day.png")
-    make_night(f"{out}/macchiato-night.png")
+    make_day(f"{out}/macchiato-day.jpg")
+    for b in NIGHT_BEATS:
+        make_night(f"{out}/macchiato-night-{b['name']}.jpg", b)
