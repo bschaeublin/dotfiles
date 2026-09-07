@@ -1,0 +1,8 @@
+[Unit]
+Description=Set the hyprpaper wallpaper for day or night
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hypr-daynight-wallpaper auto

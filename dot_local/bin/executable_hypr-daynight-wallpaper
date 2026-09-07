@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""Switch hyprpaper between the day and night wallpaper at local sunrise/sunset.
+
+Usage: hypr-daynight-wallpaper [day|night|auto] [--print]
+"""
+import math
+import os
+import subprocess
+import sys
+import time
+from datetime import date, datetime, timezone
+
+# Your location, used only for the sunrise/sunset calculation. Longitude is
+# east-positive (Berlin default; override with HYPR_LAT / HYPR_LON).
+LAT = float(os.environ.get("HYPR_LAT", "52.5200"))
+LON = float(os.environ.get("HYPR_LON", "13.4050"))
+
+WALLPAPERS = {
+    "day": os.path.expanduser("~/.config/hypr/wallpapers/macchiato-day.png"),
+    "night": os.path.expanduser("~/.config/hypr/wallpapers/macchiato-night.png"),
+}
+
+
+def sun_events(lat, lon, day):
+    """Sunrise/sunset as UTC datetimes (NOAA sunrise equation). None if polar."""
+    n = math.ceil(day.toordinal() + 1721424.5 - 2451545.0 + 0.0008)
+    j_star = n - (lon / 360.0)                       # mean solar noon
+    m = math.radians((357.5291 + 0.98560028 * j_star) % 360)
+    c = 1.9148 * math.sin(m) + 0.02 * math.sin(2 * m) + 0.0003 * math.sin(3 * m)
+    lam = math.radians((math.degrees(m) + c + 180 + 102.9372) % 360)
+    j_transit = 2451545.0 + j_star + 0.0053 * math.sin(m) - 0.0069 * math.sin(2 * lam)
+    decl = math.asin(math.sin(lam) * math.sin(math.radians(23.44)))
+    cos_w = ((math.sin(math.radians(-0.833)) - math.sin(math.radians(lat)) * math.sin(decl))
+             / (math.cos(math.radians(lat)) * math.cos(decl)))
+    if not -1.0 <= cos_w <= 1.0:
+        return None                                   # midnight sun / polar night
+    w = math.degrees(math.acos(cos_w)) / 360.0
+    to_dt = lambda jd: datetime.fromtimestamp((jd - 2440587.5) * 86400.0, timezone.utc)
+    return to_dt(j_transit - w), to_dt(j_transit + w)
+
+
+def phase_now():
+    now = datetime.now(timezone.utc)
+    ev = sun_events(LAT, LON, date.today())
+    if ev is None:                                    # no sunrise/sunset today
+        return "day" if 6 <= datetime.now().hour < 18 else "night", None
+    rise, set_ = ev
+    return ("day" if rise <= now < set_ else "night"), (rise, set_)
+
+
+def hyprctl(*args):
+    return subprocess.run(["hyprctl", *args], capture_output=True, text=True, timeout=5)
+
+
+def paper_socket():
+    """Path to hyprpaper's IPC socket, or None outside a Hyprland session."""
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    if not sig:
+        return None
+    rt = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    return os.path.join(rt, "hypr", sig, ".hyprpaper.sock")
+
+
+def apply(phase):
+    path = WALLPAPERS[phase]
+    if not os.path.exists(path):
+        sys.exit(f"missing wallpaper: {path}")
+    sock = paper_socket()
+    if sock is None:
+        print("not inside a Hyprland session; nothing to do")
+        return
+    for _ in range(20):                  # hyprpaper starts a little after login
+        if os.path.exists(sock):
+            break
+        time.sleep(1)
+    else:
+        sys.exit("hyprpaper socket never appeared")
+    # hyprpaper 0.8.4 loads on demand and rejects an explicit `preload` over IPC,
+    # so try it for older builds but do not treat a refusal as failure.
+    hyprctl("hyprpaper", "preload", path)
+    r = hyprctl("hyprpaper", "wallpaper", f",{path}")
+    if r.returncode != 0:
+        sys.exit(f"failed to set wallpaper: {r.stdout.strip()} {r.stderr.strip()}")
+    print(f"wallpaper -> {phase}")
+
+
+if __name__ == "__main__":
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    want = args[0] if args else "auto"
+    phase, ev = phase_now()
+    if want in WALLPAPERS:
+        phase = want
+    elif want != "auto":
+        sys.exit("usage: hypr-daynight-wallpaper [day|night|auto] [--print]")
+    if "--print" in sys.argv:
+        if ev:
+            fmt = lambda d: d.astimezone().strftime("%H:%M")
+            print(f"sunrise {fmt(ev[0])}  sunset {fmt(ev[1])}  -> {phase}")
+        else:
+            print(f"no sunrise/sunset today -> {phase}")
+        sys.exit(0)
+    apply(phase)
