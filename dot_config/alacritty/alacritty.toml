@@ -2,7 +2,7 @@
 TERM = "xterm-256color"
 
 [window]
-opacity = 0.95
+opacity = 0.82
 dynamic_title = false
 
 [font]
@@ -16,3 +16,8 @@ size = 12
 import = [
     "~/.config/alacritty/catppuccin-macchiato.toml"
 ]
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Shift"
+chars = "\x1b\r"
