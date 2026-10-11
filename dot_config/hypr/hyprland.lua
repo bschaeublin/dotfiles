@@ -32,6 +32,10 @@ hl.workspace_rule({ workspace = "3", monitor = "DP-2" })
 hl.workspace_rule({ workspace = "4", monitor = "DP-1" })
 hl.workspace_rule({ workspace = "5", monitor = "DP-2" })
 
+-- Scratchpad: a hidden workspace toggled over whatever is on screen. Windows on it
+-- keep running while hidden; the terminal is spawned the first time it opens empty.
+hl.workspace_rule({ workspace = "special:magic", on_created_empty = "alacritty" })
+
 --------------------------------------------------------------------------------
 -- AUTOSTART
 -- https://wiki.hypr.land/Configuring/Basics/Autostart/
@@ -55,7 +59,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hyprpaper")                                     -- wallpaper
     hl.exec_cmd("dunst")                                         -- notification daemon
     hl.exec_cmd("systemctl --user start xdg-desktop-portal-hyprland")
-    hl.exec_cmd("wl-paste --watch cliphist store")               -- clipboard history
 
     -- Start 1Password ourselves so it outlives Chrome. Otherwise the Chrome extension
     -- spawns it on demand, it dies with Chrome, and every cold start demands the
@@ -119,6 +122,10 @@ hl.config({
 
     decoration = {
         rounding = 8,
+
+        -- Dim unfocused windows so focus is obvious across both screens
+        dim_inactive = true,
+        dim_strength = 0.1,
 
         blur = {
             enabled           = true,
@@ -249,6 +256,16 @@ hl.bind(mainMod .. " + SHIFT + left",  hl.dsp.window.move({ direction = "left"  
 hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "right" }))
 hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.move({ direction = "up"    }))
 hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.move({ direction = "down"  }))
+
+-- Resize the focused window with the keyboard (was mouse-only)
+hl.bind(mainMod .. " + CTRL + left",  hl.dsp.window.resize({ x = -40, y = 0, relative = true }), { repeating = true })
+hl.bind(mainMod .. " + CTRL + right", hl.dsp.window.resize({ x =  40, y = 0, relative = true }), { repeating = true })
+hl.bind(mainMod .. " + CTRL + up",    hl.dsp.window.resize({ x = 0, y = -40, relative = true }), { repeating = true })
+hl.bind(mainMod .. " + CTRL + down",  hl.dsp.window.resize({ x = 0, y =  40, relative = true }), { repeating = true })
+
+-- Scratchpad: SUPER+S toggles it, SUPER+SHIFT+S throws the focused window into it
+hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Workspaces, and moving the active window to a workspace
 for i = 1, 5 do
