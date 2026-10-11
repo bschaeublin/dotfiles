@@ -1,0 +1,10 @@
+[Unit]
+Description=Check for Claude Desktop updates
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=6h
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target

@@ -2,3 +2,7 @@
 .config/**
 .zshrc
 {{ end }}
+
+# system files, installed via sudo system/*/install.sh
+system
+system/**

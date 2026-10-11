@@ -1,0 +1,8 @@
+[Unit]
+Description=Rebuild and install Claude Desktop from Anthropic's apt repo
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/claude-desktop-sync

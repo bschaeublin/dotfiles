@@ -1,0 +1,75 @@
+#!/bin/bash
+# Repackage Anthropic's official claude-desktop .deb as an RPM and install it.
+# Trust chain: pinned Anthropic key -> signed InRelease -> Packages sha256 -> .deb sha256.
+# Nothing from the .deb is executed; its maintainer scripts (apt/AppArmor setup) are dropped.
+set -euo pipefail
+REPO=https://downloads.claude.ai/claude-desktop/apt/stable
+KEY=/usr/local/share/claude-desktop-sync/anthropic.gpg  # fpr 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+REL=2.repack  # bump when this script changes what goes into the RPM
+case $(uname -m) in x86_64) DA=amd64 ;; aarch64) DA=arm64 ;; *) echo "unsupported arch" >&2; exit 1 ;; esac
+
+W=$(mktemp -d); trap 'rm -rf "$W"' EXIT; cd "$W"
+
+curl -fsSLo InRelease "$REPO/dists/stable/InRelease"
+gpgv --keyring "$KEY" --output Release InRelease
+curl -fsSLo Packages "$REPO/dists/stable/main/binary-$DA/Packages"
+sum=$(awk -v f="main/binary-$DA/Packages" '/^SHA256:/{s=1;next} /^[^ ]/{s=0} s && $3==f {print $1}' Release)
+echo "$sum  Packages" | sha256sum -c --quiet
+
+read -r VER FILE SHA < <(awk '
+  /^Package:/{p=$2} /^Version:/{v=$2} /^Filename:/{f=$2} /^SHA256:/{s=$2}
+  /^$/{if(p=="claude-desktop")print v,f,s; p=""} END{if(p=="claude-desktop")print v,f,s}' Packages | sort -V | tail -1)
+[[ $VER =~ ^[0-9][0-9.]*$ ]] || { echo "unexpected version '$VER'" >&2; exit 1; }
+
+if [ "$(rpm -q --qf '%{VERSION}-%{RELEASE}' claude-desktop 2>/dev/null)" = "$VER-$REL" ]; then
+  echo "claude-desktop $VER already installed"; exit 0
+fi
+# Don't swap files under a running app; the timer retries.
+if [ "${1:-}" != --build-only ] && pgrep -x claude-desktop >/dev/null; then
+  echo "claude-desktop $VER available, app is running; deferring"; exit 0
+fi
+
+echo "building claude-desktop $VER"
+curl -fsSLo pkg.deb "$REPO/$FILE"
+echo "$SHA  pkg.deb" | sha256sum -c --quiet
+ar x pkg.deb data.tar.xz
+mkdir root && tar -xJf data.tar.xz -C root
+
+# What the .deb postinst would have copied out of resources/, owned by the RPM instead.
+R=root/usr/lib/claude-desktop/resources
+install -Dm644 -t root/usr/share/gnome-shell/search-providers "$R"/gnome-search-provider/*.ini
+install -Dm644 -t root/usr/share/dbus-1/services "$R"/gnome-search-provider/*.service
+install -Dm644 -t root/usr/share/mime/packages "$R"/linux-mime/com.anthropic.Claude.xml
+[ -x "$R/bin/ccd" ] && ln -s ../lib/claude-desktop/resources/bin/ccd root/usr/bin/ccd
+chmod 4755 root/usr/lib/claude-desktop/chrome-sandbox
+# Electron only uses the Secret Service on DEs it recognises (not Hyprland); force it.
+rm root/usr/bin/claude-desktop
+printf '#!/bin/sh\nexec /usr/lib/claude-desktop/claude-desktop --password-store=gnome-libsecret "$@"\n' > root/usr/bin/claude-desktop
+chmod 755 root/usr/bin/claude-desktop
+rm -rf root/usr/share/lintian
+
+{ echo /usr/lib/claude-desktop; (cd root && find usr -path usr/lib/claude-desktop -prune -o ! -type d -printf '/%p\n'); } > files
+
+cat > claude-desktop.spec <<EOF
+Name:       claude-desktop
+Version:    $VER
+Release:    $REL
+Summary:    Claude Desktop (Anthropic's official .deb, repackaged locally)
+License:    Proprietary
+URL:        https://claude.ai
+AutoReqProv: no
+Requires:   gtk3 nss libnotify libsecret xdg-utils mesa-libgbm libXtst at-spi2-core libdrm libxcb pipewire-libs xdg-desktop-portal
+Recommends: libayatana-appindicator-gtk3 bubblewrap socat qemu-system-x86 edk2-ovmf virtiofsd
+%global debug_package %{nil}
+%global __os_install_post %{nil}
+%global _build_id_links none
+%global _binary_payload w3.zstdio
+%description
+Repackaged from $REPO/$FILE (sha256 $SHA).
+%install
+cp -a $W/root/. %{buildroot}/
+%files -f $W/files
+EOF
+rpmbuild -bb --quiet --define "_topdir $W/rpm" claude-desktop.spec
+[ "${1:-}" = --build-only ] && { cp rpm/RPMS/*/*.rpm "${2:-.}"; exit 0; }
+dnf install -y rpm/RPMS/*/claude-desktop-*.rpm
