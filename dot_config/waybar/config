@@ -13,6 +13,7 @@
         "tray",
         "cpu",
         "temperature#cpu",
+        "memory",
         "custom/gpu-usage",
         "temperature#gpu",
         "pulseaudio",
@@ -39,26 +40,12 @@
         "on-click": "activate"
     },
     "clock": {
-        "format": "{:%H:%M }",
-        "format-alt": "{:%A, %d. %B %Y (%H:%M)}",
-        "tooltip-format": "<tt><small>{calendar}</small></tt>",
-        "calendar": {
-            "mode": "month",
-            "mode-mon-col": 3,
-            "weeks-pos": "right",
-            "on-scroll": 1,
-            "on-click-right": "mode",
-            "format": {
-                "months": "<span color='#b7bdf8'><b>{}</b></span>",
-                "days": "<span color='#a5adce'>{}</span>",
-                "weeks": "<span color='#8bd5ca'><b>{}</b></span>",
-                "weekdays": "<span color='#91d7e3'><b>{}</b></span>",
-                "today": "<span color='#f4dbd6' background='#363a4f'><b><u>{}</u></b></span>"
-            }
-        },
+        "format": "<span color='#a5adcb'>{0:L%a %d.%m.}</span>  {0:%H:%M} \uf017",
+        "tooltip": false,
+        "on-click": "calendar-toggle",
         "timezone": "Europe/Zurich",
         "locale": "de_CH.UTF-8",
-        "interval": 30
+        "interval": 60
     },
     "tray": {
         "icon-size": 18,
@@ -72,7 +59,7 @@
             "warning": 70,
             "critical": 90
         },
-        "on-click": "foot -e htop"
+        "on-click": "alacritty -e htop"
     },
     "temperature#cpu": {
         "tooltip": true,
@@ -81,6 +68,16 @@
         "format-critical": "{temperatureC}°C 🔥",
         "format": "{temperatureC}°C",
         "interval": 5
+    },
+    "memory": {
+        "format": "RAM {percentage}% 󰍛",
+        "tooltip-format": "{used:0.1f} GiB / {total:0.1f} GiB\nSwap: {swapUsed:0.1f} GiB / {swapTotal:0.1f} GiB",
+        "interval": 5,
+        "states": {
+            "warning": 80,
+            "critical": 92
+        },
+        "on-click": "alacritty -e htop"
     },
     "custom/gpu-usage": {
         "exec": "cat /sys/class/drm/card1/device/gpu_busy_percent",

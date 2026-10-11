@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Themed calendar popup for the waybar clock.
+
+Click the clock to open, click again (or press Esc, or click away) to close.
+A GTK tooltip cannot be hovered into and a zenity dialog brings its own
+titlebar and buttons, so this is a plain undecorated window instead.
+"""
+import os
+import signal
+import subprocess
+import sys
+
+os.environ.setdefault("LC_TIME", "de_CH.UTF-8")  # German month/day names
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GtkLayerShell", "0.1")
+from gi.repository import Gdk, Gtk, GtkLayerShell  # noqa: E402
+
+PIDFILE = os.path.join(
+    os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "calendar-popup.pid"
+)
+
+# Catppuccin Macchiato, matching waybar's style.css
+CSS = b"""
+window {
+    background-color: #24273a;
+    border: 2px solid #c6a0f6;
+    border-radius: 12px;
+}
+calendar {
+    background-color: #24273a;
+    color: #cad3f5;
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    /* GtkCalendar reserves the week-number column on the left, so the left gap
+       runs wider than the right - compensate rather than pad evenly. Vertical
+       padding is 0 on purpose: it inflates the day cells, and GtkCalendar does
+       not vertically centre the week numbers the way it centres day cells, so
+       taller cells push the week numbers visibly off. Breathing room comes from
+       margin instead, which sits outside the widget and leaves cells alone. */
+    padding: 0px 12px 0px 2px;
+    margin: 10px 4px 10px 4px;
+}
+calendar.header {
+    background-color: transparent;
+    border-bottom: 1px solid #494d64;
+    color: #c6a0f6;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 8px 4px;
+}
+calendar.button {
+    color: #8bd5ca;
+    padding: 5px 7px;
+}
+calendar.button:hover {
+    background-color: #363a4f;
+    border-radius: 6px;
+}
+calendar.highlight { color: #8bd5ca; font-weight: bold; }
+calendar:selected {
+    background-color: #c6a0f6;
+    color: #24273a;
+    font-weight: bold;
+    border-radius: 6px;
+}
+calendar:indeterminate { color: #6e738d; }
+"""
+
+
+def monitor_under_cursor():
+    """The Gdk.Monitor containing Hyprland's cursor, or None if unavailable."""
+    try:
+        out = subprocess.run(
+            ["hyprctl", "cursorpos"], capture_output=True, text=True, timeout=1
+        ).stdout
+        cx, cy = (int(n) for n in out.split(","))
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+
+    display = Gdk.Display.get_default()
+    for i in range(display.get_n_monitors()):
+        mon = display.get_monitor(i)
+        g = mon.get_geometry()
+        if g.x <= cx < g.x + g.width and g.y <= cy < g.y + g.height:
+            return mon
+    return None
+
+
+def close_running():
+    """Kill an already-open popup. Returns True if one was open."""
+    try:
+        with open(PIDFILE) as f:
+            os.kill(int(f.read()), signal.SIGTERM)
+        return True
+    except (FileNotFoundError, ValueError, ProcessLookupError):
+        return False  # no popup, or a stale pidfile
+
+
+def main():
+    already_open = close_running()
+    try:
+        os.unlink(PIDFILE)
+    except FileNotFoundError:
+        pass
+    if already_open:
+        return  # this click was the "close" half of the toggle
+
+    with open(PIDFILE, "w") as f:
+        f.write(str(os.getpid()))
+
+    win = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+    win.set_decorated(False)
+    win.set_resizable(False)
+
+    # A layer-shell surface anchors to the screen edge and honours waybar's
+    # exclusive zone, so it sits right under the bar without any window rules.
+    # Anchoring only TOP centres it horizontally, i.e. under the centred clock.
+    GtkLayerShell.init_for_window(win)
+    GtkLayerShell.set_namespace(win, "calendar-popup")
+    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
+    GtkLayerShell.set_margin(win, GtkLayerShell.Edge.TOP, 4)
+    GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.ON_DEMAND)
+
+    # Open on the monitor the pointer is on, not whichever happens to be
+    # focused, so clicking the clock on either screen opens it there.
+    # GDK cannot report the global pointer position on Wayland (it always
+    # answers 0,0), so ask the compositor instead.
+    monitor = monitor_under_cursor()
+    if monitor is not None:
+        GtkLayerShell.set_monitor(win, monitor)
+
+    cal = Gtk.Calendar()
+    cal.set_display_options(
+        Gtk.CalendarDisplayOptions.SHOW_HEADING
+        | Gtk.CalendarDisplayOptions.SHOW_DAY_NAMES
+        | Gtk.CalendarDisplayOptions.SHOW_WEEK_NUMBERS
+    )
+    win.add(cal)
+
+    provider = Gtk.CssProvider()
+    provider.load_from_data(CSS)
+    Gtk.StyleContext.add_provider_for_screen(
+        Gdk.Screen.get_default(), provider,
+        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+    )
+
+    def on_scroll(_widget, event):
+        """Scroll anywhere on the calendar to page months."""
+        up = event.direction == Gdk.ScrollDirection.UP or (
+            event.direction == Gdk.ScrollDirection.SMOOTH and event.delta_y < 0
+        )
+        month = cal.get_property("month") + (-1 if up else 1)
+        year = cal.get_property("year") + month // 12
+        cal.select_month(month % 12, year)
+        return True
+
+    cal.add_events(Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
+    cal.connect("scroll-event", on_scroll)
+
+    win.connect("destroy", Gtk.main_quit)
+    # No close-on-focus-loss: a layer surface drops focus the moment it maps,
+    # which closed the popup instantly. Clock click toggles, Esc closes.
+    win.connect(
+        "key-press-event",
+        lambda _w, e: Gtk.main_quit() if e.keyval == Gdk.KEY_Escape else None,
+    )
+    signal.signal(signal.SIGTERM, lambda *_: Gtk.main_quit())
+
+    win.show_all()
+    Gtk.main()
+
+    try:
+        os.unlink(PIDFILE)
+    except FileNotFoundError:
+        pass
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -184,12 +184,13 @@ window#waybar.hidden {
 tooltip {
     background-color: @mantle;
     color: @text;
-    border-radius: 8px;
-    border: 1px solid @overlay0;
-    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid @mauve;
+    padding: 10px;
 }
 
 tooltip label {
+    font-family: "JetBrainsMono Nerd Font", monospace;
     color: @text;
-    padding: 5px;
+    padding: 6px;
 }
