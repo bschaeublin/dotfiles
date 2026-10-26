@@ -187,7 +187,7 @@ hl.config({
         kb_layout  = "ch", -- Swiss layout
         kb_variant = "de", -- German variant for Swiss layout (de_CH)
         kb_model   = "",
-        kb_options = "",
+        kb_options = "lv3:ralt_switch,lv3:rwin_switch",
         kb_rules   = "",
 
         follow_mouse       = 1,    -- focus follows mouse
@@ -284,6 +284,12 @@ hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
 -- Move/resize windows with mainMod + LMB/RMB and dragging
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+-- Windows-style Ctrl+Alt = AltGr on keys with a printed AltGr symbol (ch layout)
+-- key codes: 1-8, ' ^ e ü ¨ ä $ < (codes, not keysyms: "dollar" also sits on another key)
+for _, code in ipairs({ 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 26, 34, 35, 48, 51, 94 }) do
+    hl.bind("CTRL + ALT + code:" .. code, hl.dsp.send_shortcut({ mods = "MOD5", key = "code:" .. code }))
+end
 
 -- Media control
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
