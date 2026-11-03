@@ -34,7 +34,17 @@ hl.workspace_rule({ workspace = "5", monitor = "DP-2" })
 
 -- Scratchpad: a hidden workspace toggled over whatever is on screen. Windows on it
 -- keep running while hidden; the terminal is spawned the first time it opens empty.
-hl.workspace_rule({ workspace = "special:magic", on_created_empty = "alacritty" })
+-- The gaps inset it to 80% of a 2560x1402 usable area (2560x1440 minus waybar),
+-- replacing the deprecated special_scale_factor = 0.8.
+hl.workspace_rule({
+    workspace = "special:magic",
+    gaps_out  = { top = 140, right = 256, bottom = 140, left = 256 },
+})
+hl.on("workspace.created", function(ws)
+    if ws.name == "special:magic" and ws.is_empty then
+        hl.exec_cmd("alacritty")
+    end
+end)
 
 --------------------------------------------------------------------------------
 -- AUTOSTART
@@ -43,7 +53,7 @@ hl.workspace_rule({ workspace = "special:magic", on_created_empty = "alacritty" 
 
 hl.on("hyprland.start", function()
     -- Ensure the D-Bus environment is set up for portals
-    hl.exec_cmd("dbus-update-activation-environment --systemd --all && systemctl --user import-environment DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE")
+    hl.exec_cmd("dbus-update-activation-environment --systemd --all && systemctl --user import-environment DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE && systemctl --user start hyprland-session.target")
 
     -- KDE Polkit agent
     hl.exec_cmd("/usr/libexec/kf6/polkit-kde-authentication-agent-1")
@@ -169,12 +179,10 @@ hl.config({
     dwindle = {
         preserve_split       = true, -- You probably want this
         force_split          = 0,    -- 0: split follows mouse, 1: left/top, 2: right/bottom
-        special_scale_factor = 0.8,
     },
 
     master = {
         new_on_top           = false,
-        special_scale_factor = 0.8,
     },
 })
 
